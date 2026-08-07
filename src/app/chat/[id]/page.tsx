@@ -10,6 +10,7 @@ import { MessageBubble } from "@/components/chat/MessageBubble";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import type { Conversation, Message, Profile } from "@/types/database";
 
 export default function ChatRoomPage() {
@@ -18,6 +19,7 @@ export default function ChatRoomPage() {
   const me = useAuthStore((s) => s.profile);
   const token = useAuthStore((s) => s.token);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
+  const setActiveConversation = useNotificationStore((s) => s.setActiveConversation);
 
   const [convo, setConvo] = useState<Conversation | null>(null);
   const [peer, setPeer] = useState<Profile | null>(null);
@@ -94,6 +96,14 @@ export default function ChatRoomPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Marque cette conversation comme "ouverte" -> pas de notif pour elle,
+  // et remet son compteur de non-lus à zéro.
+  useEffect(() => {
+    if (!id) return;
+    setActiveConversation(id);
+    return () => setActiveConversation(null);
+  }, [id, setActiveConversation]);
 
   async function handleSend(content: string) {
     if (!me || !id) return;

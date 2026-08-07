@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Compass, MessageCircle, Gift, User } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore, selectTotalUnread } from "@/store/useNotificationStore";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +19,7 @@ export function Navbar() {
   const pathname = usePathname();
   const status = useAuthStore((s) => s.status);
   const authed = status === "authenticated";
+  const totalUnread = useNotificationStore(selectTotalUnread);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -45,6 +47,11 @@ export function Navbar() {
                 >
                   <Icon className="h-4 w-4" />
                   {label}
+                  {href === "/chat" && totalUnread > 0 && (
+                    <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                      {totalUnread > 9 ? "9+" : totalUnread}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -68,7 +75,14 @@ export function Navbar() {
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <Icon className="h-4 w-4" />
+                <span className="relative">
+                  <Icon className="h-4 w-4" />
+                  {href === "/chat" && totalUnread > 0 && (
+                    <span className="absolute -right-1.5 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground">
+                      {totalUnread > 9 ? "9+" : totalUnread}
+                    </span>
+                  )}
+                </span>
                 {label}
               </Link>
             );

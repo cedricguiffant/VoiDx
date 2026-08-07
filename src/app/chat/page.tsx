@@ -9,10 +9,12 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNotificationStore } from "@/store/useNotificationStore";
 import type { Conversation, Profile, ConversationWithPeer } from "@/types/database";
 
 export default function ChatListPage() {
   const me = useAuthStore((s) => s.profile);
+  const unread = useNotificationStore((s) => s.unread);
   const [items, setItems] = useState<ConversationWithPeer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,6 +96,11 @@ export default function ChatListPage() {
                           : "No message yet"}
                       </p>
                     </div>
+                    {unread[c.id] > 0 && (
+                      <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                        {unread[c.id] > 9 ? "9+" : unread[c.id]}
+                      </span>
+                    )}
                   </CardContent>
                 </Card>
               </Link>

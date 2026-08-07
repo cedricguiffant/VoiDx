@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SolanaProvider } from "@/components/providers/SolanaProvider";
 import { AuthGate } from "@/components/providers/AuthGate";
+import { RealtimeNotifications } from "@/components/providers/RealtimeNotifications";
 import { Navbar } from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthGate>
             <Navbar />
             <main className="container py-6">{children}</main>
+            <RealtimeNotifications />
           </AuthGate>
         </SolanaProvider>
       </body>
