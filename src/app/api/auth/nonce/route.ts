@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
+// IMPORTANT : sans ça, Next.js prérend ce GET en statique au build et fige
+// la date -> tous les messages deviennent "expired". On force l'exécution
+// à chaque requête pour générer un nonce + une date frais.
+export const dynamic = "force-dynamic";
+
 /**
  * Renvoie un message à signer par Phantom (Sign-In With Solana).
  * MVP stateless : on embarque un nonce + un timestamp dans le message,
