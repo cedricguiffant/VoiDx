@@ -1,0 +1,11 @@
+{
+  "name": "VoidX",
+  "symbol": "VOID",
+  "description": "VoidX (VOID) — the reward token of VoiDx, an app that connects lonely people through matching and real-time chat. Earn VOID by talking to new people.",
+  "image": "https://voi-dx.vercel.app/voidx.jpg",
+  "external_url": "https://voi-dx.vercel.app",
+  "properties": {
+    "files": [{ "uri": "https://voi-dx.vercel.app/voidx.jpg", "type": "image/jpeg" }],
+    "category": "image"
+  }
+}

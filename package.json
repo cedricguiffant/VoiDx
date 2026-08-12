@@ -9,12 +9,14 @@
     "lint": "next lint",
     "seed": "node scripts/seed.mjs",
     "check:supabase": "node scripts/check-supabase.mjs",
-    "create:token": "node scripts/create-token.mjs"
+    "create:token": "node scripts/create-token.mjs",
+    "set:metadata": "node scripts/set-token-metadata.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^6.2.1",
     "@capacitor/cli": "^6.2.1",
     "@capacitor/core": "^6.2.1",
+    "@metaplex-foundation/mpl-token-metadata": "^2.13.0",
     "@solana/spl-token": "^0.4.9",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-react": "^0.15.35",
