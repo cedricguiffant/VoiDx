@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Coins, Sparkles, Repeat, Lock } from "lucide-react";
+import { Coins, Sparkles, Repeat, Lock, Loader2, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowser } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/useAuthStore";
-import { isClaimEnabled } from "@/lib/solana";
+import { isClaimEnabled, claimTokens, explorerTxUrl } from "@/lib/solana";
 import type { RewardLog } from "@/types/database";
 
 const REASON_META: Record<string, { label: string; icon: typeof Sparkles }> = {
@@ -18,9 +18,13 @@ const REASON_META: Record<string, { label: string; icon: typeof Sparkles }> = {
 
 export default function RewardsPage() {
   const me = useAuthStore((s) => s.profile);
+  const token = useAuthStore((s) => s.token);
   const refreshProfile = useAuthStore((s) => s.refreshProfile);
   const [logs, setLogs] = useState<RewardLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [txSig, setTxSig] = useState<string | null>(null);
 
   useEffect(() => {
     if (!me) return;
@@ -41,6 +45,23 @@ export default function RewardsPage() {
   }, [me?.id]);
 
   const claimReady = isClaimEnabled();
+  const balance = me?.token_balance ?? 0;
+
+  async function handleClaim() {
+    if (!token || balance <= 0 || claiming) return;
+    setClaiming(true);
+    setClaimError(null);
+    setTxSig(null);
+    try {
+      const { signature } = await claimTokens(token);
+      setTxSig(signature);
+      await refreshProfile(); // le solde retombe à 0
+    } catch (e) {
+      setClaimError(e instanceof Error ? e.message : "Claim failed");
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -54,14 +75,45 @@ export default function RewardsPage() {
               {me?.token_balance ?? 0}
             </p>
           </div>
-          <div className="text-right">
-            <Button disabled={!claimReady} title={claimReady ? "" : "Coming soon"}>
-              {!claimReady && <Lock className="h-4 w-4" />}
-              {claimReady ? "Claim on-chain" : "Claim soon"}
+          <div className="flex flex-col items-end text-right">
+            <Button
+              onClick={handleClaim}
+              disabled={!claimReady || balance <= 0 || claiming}
+              title={
+                !claimReady
+                  ? "Coming soon"
+                  : balance <= 0
+                    ? "Nothing to claim"
+                    : ""
+              }
+            >
+              {claiming ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Claiming…
+                </>
+              ) : (
+                <>
+                  {!claimReady && <Lock className="h-4 w-4" />}
+                  {claimReady ? "Claim on-chain" : "Claim soon"}
+                </>
+              )}
             </Button>
-            <p className="mt-1 max-w-[12rem] text-[11px] text-muted-foreground">
-              Convertible to a Solana SPL token once the mint is deployed.
-            </p>
+            {txSig ? (
+              <a
+                href={explorerTxUrl(txSig)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-emerald-500 hover:underline"
+              >
+                Claim sent — view transaction <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : claimError ? (
+              <p className="mt-1.5 max-w-[12rem] text-[11px] text-destructive">{claimError}</p>
+            ) : (
+              <p className="mt-1.5 max-w-[12rem] text-[11px] text-muted-foreground">
+                Convert your VOID into a real SPL token on Solana.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

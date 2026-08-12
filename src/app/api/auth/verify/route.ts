@@ -6,7 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { walletToUserId } from "@/lib/auth/userId";
 import { signSupabaseJwt } from "@/lib/auth/jwt";
 
-const MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes (fenêtre anti-rejeu)
 
 /**
  * Vérifie la signature Phantom du message, puis :

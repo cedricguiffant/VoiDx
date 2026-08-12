@@ -1,52 +1,46 @@
 /**
- * Préparation du futur "Claim" on-chain (token SPL).
+ * Claim on-chain (token SPL VOID) — côté client.
  *
- * L'idée : convertir le solde virtuel (token_balance en base) en vrai token
- * SPL sur Solana. Le mint réel doit être signé par une autorité de mint
- * détenue côté serveur — JAMAIS exposée au client.
- *
- * Flux cible (à implémenter plus tard) :
- *  1. Le client appelle une route serveur /api/claim { amount }.
- *  2. Le serveur vérifie le solde disponible, applique d'éventuels plafonds,
- *     puis mint/transfère `amount` tokens vers l'ATA du wallet de l'utilisateur.
- *  3. On décrémente token_balance en base dans la même transaction logique.
- *
- * Ci-dessous, le squelette est volontairement laissé en commentaire tant que
- * le token SPL n'est pas déployé (NEXT_PUBLIC_TOKEN_MINT vide).
+ * Le solde virtuel (token_balance en base) est convertible en vrais tokens SPL.
+ * Toute la logique sensible (clé du trésor, transfert, décrément atomique) vit
+ * côté serveur dans /api/claim ; ici on ne fait qu'appeler cette route.
  */
 
 export const TOKEN_MINT = process.env.NEXT_PUBLIC_TOKEN_MINT ?? "";
 
+/** Le claim est activé dès qu'un mint est configuré. */
 export function isClaimEnabled(): boolean {
   return TOKEN_MINT.trim().length > 0;
 }
 
-/**
- * Stub : à remplacer par un appel à la route serveur /api/claim une fois
- * le token déployé. Retourne volontairement une erreur explicite pour l'instant.
- */
-export async function claimTokens(_amount: number): Promise<never> {
-  throw new Error(
-    "On-chain claim is not available yet. The virtual VOID token will be convertible to SPL once the mint is deployed."
-  );
+export interface ClaimResult {
+  signature: string;
+  amount: number;
+}
 
-  /* -------------------------------------------------------------------------
-   * Exemple d'implémentation future (serveur, avec @solana/spl-token) :
-   *
-   * import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-   * import {
-   *   getOrCreateAssociatedTokenAccount,
-   *   mintTo,
-   * } from "@solana/spl-token";
-   *
-   * const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC!);
-   * const mintAuthority = Keypair.fromSecretKey(...);   // SECRET côté serveur
-   * const mint = new PublicKey(TOKEN_MINT);
-   * const userAta = await getOrCreateAssociatedTokenAccount(
-   *   connection, mintAuthority, mint, userPublicKey
-   * );
-   * await mintTo(connection, mintAuthority, mint, userAta.address,
-   *   mintAuthority, amount);
-   * // puis décrémenter token_balance en base.
-   * ----------------------------------------------------------------------- */
+/**
+ * Déclenche le claim : convertit la totalité du solde virtuel en tokens SPL
+ * envoyés au wallet de l'utilisateur.
+ * @param token JWT de session (Authorization: Bearer ...)
+ */
+export async function claimTokens(token: string): Promise<ClaimResult> {
+  const res = await fetch("/api/claim", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error ?? "Claim failed");
+  }
+  return data as ClaimResult;
+}
+
+/** Lien explorer pour une transaction (devnet par défaut). */
+export function explorerTxUrl(signature: string): string {
+  const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
+  const cluster = network === "mainnet-beta" ? "" : `?cluster=${network}`;
+  return `https://explorer.solana.com/tx/${signature}${cluster}`;
 }
