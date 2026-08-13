@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { PublicKey } from "@solana/web3.js";
-import { getOrCreateAssociatedTokenAccount, transfer } from "@solana/spl-token";
+import { getOrCreateAssociatedTokenAccount, transfer, getMint } from "@solana/spl-token";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import {
-  getConnection,
-  getTreasury,
-  getMintPubkey,
-  TOKEN_DECIMALS,
-} from "@/lib/server/treasury";
+import { getConnection, getTreasury, getMintPubkey } from "@/lib/server/treasury";
 
 /**
  * POST /api/claim
@@ -90,7 +85,10 @@ export async function POST(req: Request) {
         recipient
       );
 
-      const baseUnits = BigInt(amount) * 10n ** BigInt(TOKEN_DECIMALS);
+      // Décimales lues directement sur le mint -> jamais de divergence (le
+      // token mainnet est en 6 décimales, l'ancien devnet en 9).
+      const { decimals } = await getMint(connection, mint);
+      const baseUnits = BigInt(amount) * 10n ** BigInt(decimals);
       const signature = await transfer(
         connection,
         treasury, // payeur des frais
